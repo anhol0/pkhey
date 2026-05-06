@@ -38,6 +38,8 @@ void Agent::initiateAuthentication ( const QString & actionId,
     }
     
     PolkitQt1::Identity identity = identities.first();
+    QString name = identity.toString();
+    dialog->setIdentity("Authenticating as " + name);
 
     pendingIdentity = identity;
     pendingCookie = cookie;

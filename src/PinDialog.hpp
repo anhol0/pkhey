@@ -20,11 +20,13 @@ class PinDialog : public QWidget{
 public:
     explicit PinDialog(QWidget *parent = nullptr);
     void reset();
+    void setIdentity(const QString &identity);
 signals:
     void pinSubmitted(const QString &pin);
     void cancelled();
 protected:
     virtual void closeEvent(QCloseEvent *event) override;
+    QLabel *pLabel;
     QLineEdit *pInput; 
     QPushButton *pSubmit;
     QPushButton *pCancel;

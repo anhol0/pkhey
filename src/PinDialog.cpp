@@ -2,6 +2,7 @@
 #include <qaction.h>
 #include <qapplication.h>
 #include <qboxlayout.h>
+#include <qlabel.h>
 #include <qlineedit.h>
 #include <qlogging.h>
 #include <qnamespace.h>
@@ -14,6 +15,9 @@
 PinDialog::PinDialog(QWidget *parent) : QWidget(parent) {
     setWindowTitle("pkhey");
     setWindowFlags(Qt::Dialog | Qt::WindowStaysOnTopHint);
+
+    pLabel = new QLabel(this);
+
     pInput = new QLineEdit(this);
     pInput->setEchoMode(QLineEdit::Password);
 
@@ -21,6 +25,7 @@ PinDialog::PinDialog(QWidget *parent) : QWidget(parent) {
     pCancel = new QPushButton("Cancel", this);
 
     auto *layout = new QVBoxLayout(this);
+    layout->addWidget(pLabel);
     layout->addWidget(pInput);
     layout->addWidget(pSubmit);
     layout->addWidget(pCancel);
@@ -45,4 +50,8 @@ void PinDialog::closeEvent(QCloseEvent *event) {
     qDebug() << "close action fired";
     emit cancelled();
     event->accept();
+}
+
+void PinDialog::setIdentity(const QString &identity) {
+    pLabel->setText(identity);
 }
