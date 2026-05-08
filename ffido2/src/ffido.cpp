@@ -117,15 +117,12 @@ int main() {
         // If input from the browser 
         if (ev.type == UHID_OUTPUT) {
             UHIDReport report;
-            printf("Got HID output report (browser → device)\n");
-            printf("Got data: ");
+            printf("\x1b[1;31mGot data: \x1b[0m");
             uint8_t *data = ev.u.output.data;
-            for(int i = 0; i < ev.u.output.size; i++) {
+            for(int i = 1; i < ev.u.output.size; i++) {
                 printf("%02x", data[i]);
             }
             std::cout << "\n";
-            // Report ID (1 byte)
-            report.report_id = data[0];
             // Channel ID (4 bytes)
             report.cid = ((uint32_t)data[1] << 24) |
                          ((uint32_t)data[2] << 16) |
@@ -133,6 +130,7 @@ int main() {
                          ((uint32_t)data[4]);
             // Command (1 byte) 
             report.cmd = data[5];
+            // Check if the frame is initialization frame
             report.is_init_frame = (report.cmd & 0x80);
             report.cmd = report.cmd & 0x7F;
             if(report.is_init_frame) {
@@ -143,20 +141,26 @@ int main() {
             // Length of the nonce (2 bytes)
             report.length = MAKE_U16(data[6], data[7]); 
             // Nonce itself (variable length, set by the length)
-            for(int i = 0; i < report.length; i++) {
-                report.payload.push_back(data[8+i]); 
-            }             
-
-            // Respond based on the CMD
-            struct uhid_event resp;
-            memset(&resp, 0, sizeof(resp));
-            resp.type = UHID_INPUT2; 
-            // If in broadcast channel
+            bool respd = false;
             if(report.cmd == CTAPHID_INIT) {
+                for(int i = 0; i < report.length; i++) {
+                    report.payload.push_back(data[8+i]); 
+                }             
+                respd = true;
+            } else if(report.cmd == CTAPHID_CBOR) {
+                report.payload.push_back(data[8]);
+                respd = true;
+            } 
+
+            if(respd) {
+                // Respond based on the CMD
+                struct uhid_event resp;
+                memset(&resp, 0, sizeof(resp));
+                resp.type = UHID_INPUT2; 
                 CTAPFrame frame = respond(report);
-                std::vector<uint8_t> data = frame.stringify();
-                memcpy(resp.u.input2.data, data.data(), data.size());
-                resp.u.input2.size = data.size(); 
+                std::vector<uint8_t> response = frame.stringify();
+                memcpy(resp.u.input2.data, response.data(), response.size());
+                resp.u.input2.size = response.size(); 
                 write(fd, &resp, sizeof(resp));
             }
         }
